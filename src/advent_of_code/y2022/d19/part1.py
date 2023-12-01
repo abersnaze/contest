@@ -90,7 +90,7 @@ def optimal(blueprints):
         for choice in blueprints:
             queue.extend(use_blueprint(*state, *choice))
         queue.sort(key=lambda s: s[0], reverse=True)
-    return best_at[LIMIT -1]
+    return best_at[LIMIT - 1]
 
 
 for num, blueprints in all_blueprints.items():

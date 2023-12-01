@@ -36,7 +36,6 @@ for line in fileinput.input():
                     addrs = [b | a for a in addrs for b in [0, bit]]
                 bit <<= 1
             for a in addrs:
-
                 mem[a] = value
 
 print(len(mem.values()))

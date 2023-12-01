@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Generator, NewType, Dict, Tuple, List
 from collections import defaultdict
 from math import inf
@@ -5,6 +6,68 @@ from math import inf
 from common.math import sign
 
 V = NewType("UserId", int)
+
+
+class Dir(Enum):
+    N = (0, -1)
+    E = (1, 0)
+    S = (0, 1)
+    W = (-1, 0)
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def turn(self, turn):
+        if turn == "L":
+            return Dir((-self.y, self.x))
+        elif turn == "R":
+            return Dir((self.y, -self.x))
+        elif turn == "U":
+            return Dir((-self.x, -self.y))
+        elif turn == "F":
+            return self
+        else:
+            raise ValueError(f"Unknown turn {turn}")
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.name
+
+    def __add__(self, other):
+        return (self.x + other[0], self.y + other[1])
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    def __mul__(self, other):
+        return Dir((self.x * other, self.y * other))
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+    def __hash__(self):
+        return hash((self.x, self.y))
+
+
+def adjencent4(p):
+    yield p + Dir.N
+    yield p + Dir.E
+    yield p + Dir.S
+    yield p + Dir.W
+
+
+def adjencent8(p):
+    yield p + Dir.N
+    yield p + Dir.N + Dir.E
+    yield p + Dir.E
+    yield p + Dir.E + Dir.S
+    yield p + Dir.S
+    yield p + Dir.S + Dir.W
+    yield p + Dir.W
+    yield p + Dir.W + Dir.N
 
 
 class Space(Dict[Tuple[int, ...], V]):
@@ -26,6 +89,15 @@ class Space(Dict[Tuple[int, ...], V]):
             self.dim_range[i] = (min(min_k, k), max(max_k, k))
         self.points[key] = value
 
+    def __iadd__(self, other: Tuple[int, ...]) -> None:
+        self[other] += 1
+
+    def __len__(self) -> int:
+        return len(self.points)
+
+    def __contains__(self, key) -> bool:
+        return key in self.points
+
     def range(self, depth: int) -> range:
         min_d, max_d = self.dim_range[depth]
         return range(min_d, max_d + 1)
@@ -34,6 +106,8 @@ class Space(Dict[Tuple[int, ...], V]):
         output = ""
         if path:
             output += "".join(map(self.to_str, path)) + "\n"
+        if self.dim_range is None:
+            return "empty"
         if depth >= len(self.dim_range) - 2:
             for y in self.range(depth):
                 for x in self.range(depth + 1):
@@ -45,7 +119,7 @@ class Space(Dict[Tuple[int, ...], V]):
                 output += self.dump(1, path + [d])
         return output
 
-    def __rep__(self) -> str:
+    def __repr__(self) -> str:
         return self.dump(0, [])
 
 

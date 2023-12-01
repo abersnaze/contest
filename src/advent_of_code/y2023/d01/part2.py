@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
-from math import inf
 from fileinput import input
-from common.space import Space
 
 
 names = {
@@ -40,9 +38,9 @@ def last_digit(line):
         i -= 1
 
 
-def ingest():
+def ingest(files=None):
     values = []
-    for line in input():
+    for line in input(files):
         line = line.strip()
         value = int(first_digit(line) + last_digit(line))
         print(line, "=>", value)
