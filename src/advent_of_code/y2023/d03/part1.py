@@ -28,24 +28,25 @@ def process(s, syms):
         s[sym] = 0
     total = 0
     for part in parts.values():
-        total += sum(part)
+        total += sum([part[1] for part in part])
     return total
 
 
 def read_part(s, p):
     digits = 0
     # find the first
-    curr = p
-    while curr in s:
-        curr += Dir.W
-    curr += Dir.E
+    start = p
+    while start in s:
+        start += Dir.W
+    start += Dir.E
 
     # curr is now the first digit
+    curr = start
     while curr in s:
         digits = digits * 10 + s[curr]
         curr += Dir.E
 
-    return digits
+    return start, digits
 
 
 def output(data):

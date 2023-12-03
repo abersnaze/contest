@@ -30,24 +30,25 @@ def process(s, syms):
     total = 0
     for key in parts.keys():
         if syms[key] == "*" and len(parts[key]) == 2:
-            total += prod(parts[key])
+            total += prod([p[1] for p in parts[key]])
     return total
 
 
 def read_part(s, p):
     digits = 0
     # find the first
-    curr = p
-    while curr in s:
-        curr += Dir.W
-    curr += Dir.E
+    start = p
+    while start in s:
+        start += Dir.W
+    start += Dir.E
 
     # curr is now the first digit
+    curr = start
     while curr in s:
         digits = digits * 10 + s[curr]
         curr += Dir.E
 
-    return digits
+    return start, digits
 
 
 def output(data):
