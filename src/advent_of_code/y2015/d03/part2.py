@@ -1,21 +1,37 @@
 #!/usr/bin/env python3
 
-from math import inf, prod
+from math import inf
 from fileinput import input
 from common.space import Space
+from common.space import Dir
 
 
 def ingest(files=None):
-    return map(lambda x: tuple(map(int, x.strip().split("x"))), input(files))
+    def dirs(c):
+        return {
+            "^": Dir.N,
+            "v": Dir.S,
+            ">": Dir.E,
+            "<": Dir.W,
+        }[c]
+
+    return map(dirs, next(input(files)).strip())
 
 
 def process(data):
-    def wrap(w, l, h):
-        bow = prod([w, l, h])
-        ribbon = 2 * (w + l + h - max(w, l, h))
-        return bow + ribbon
-
-    return sum(map(lambda x: wrap(*x), data))
+    s = Space(0)
+    start = (0, 0)
+    s[start] += 1
+    robo = start
+    santa = start
+    for i, move in enumerate(data):
+        if i % 2 == 0:
+            santa += move
+            s[santa] += 1
+        else:
+            robo += move
+            s[robo] += 1
+    return len(s)
 
 
 def output(data):
@@ -24,5 +40,3 @@ def output(data):
 
 if __name__ == "__main__":
     output(process(ingest()))
-
-# 1598415

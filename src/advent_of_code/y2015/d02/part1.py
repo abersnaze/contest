@@ -23,5 +23,3 @@ def output(data):
 
 if __name__ == "__main__":
     output(process(ingest()))
-
-# 1598415
