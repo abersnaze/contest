@@ -24,4 +24,3 @@ def output(data):
 
 if __name__ == "__main__":
     output(process(ingest()))
-

@@ -7,46 +7,44 @@ from common.space import Dir, Space, adjencent8
 
 
 def ingest(files=None):
-    s = Space(".")
-    syms = {}
-    for y, line in enumerate(input(files)):
-        for x, c in enumerate(line.strip()):
-            if c.isdigit():
-                s[x, y] = int(c)
-            elif c != ".":
-                syms[(x, y)] = c
-    return s, syms
+    cards = {}
+    for line in input(files):
+        id, win_nums, pick_nums = parse(line.strip().replace("  ", " "))
+        cards[id] = (win_nums, pick_nums)
+    return (cards,)
 
 
-def process(s, syms):
-    parts = defaultdict(set)
-    for sym in syms.keys():
-        print("Checking", syms[sym], "at", sym)
-        for p in adjencent8(sym):
-            if p in s:
-                parts[sym].add(read_part(s, p))
-        s[sym] = 0
-    total = 0
-    for part in parts.values():
-        total += sum([part[1] for part in part])
-    return total
+def parse(line):
+    # Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
+
+    card, numbers = line.strip().split(":")
+    id = int(card[5:])
+    win_nums, pick_nums = numbers.split("|")
+    win_nums = list(map(int, win_nums.strip().split(" ")))
+    pick_nums = list(map(int, pick_nums.strip().split(" ")))
+
+    return id, win_nums, pick_nums
 
 
-def read_part(s, p):
-    digits = 0
-    # find the first
-    start = p
-    while start in s:
-        start += Dir.W
-    start += Dir.E
+def process(cards):
+    scores = []
+    for card, nums in cards.items():
+        win_nums, pick_nums = nums
+        score = score_card(win_nums, pick_nums)
+        print(card, score)
+        scores.append(score)
+    return sum(scores)
 
-    # curr is now the first digit
-    curr = start
-    while curr in s:
-        digits = digits * 10 + s[curr]
-        curr += Dir.E
 
-    return start, digits
+def score_card(win_nums, pick_nums):
+    score = 0
+    for pick in pick_nums:
+        if pick in win_nums:
+            if score == 0:
+                score = 1
+            else:
+                score *= 2
+    return score
 
 
 def output(data):

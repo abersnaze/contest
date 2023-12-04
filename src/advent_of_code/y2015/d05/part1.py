@@ -20,18 +20,19 @@ def is_nice(line):
     # It contains at least one letter that appears twice in a row, like xx, abcdde (dd), or aabbccdd (aa, bb, cc, or dd).
     has_double = False
     for i in range(len(line) - 1):
-        if line[i] == line[i+1]:
+        if line[i] == line[i + 1]:
             has_double = True
     if not has_double:
         return False
 
     # It does not contain the strings ab, cd, pq, or xy, even if they are part of one of the other requirements.
-    not_alloweds = set(['ab', 'cd', 'pq', 'xy'])
+    not_alloweds = set(["ab", "cd", "pq", "xy"])
     for not_allowed in not_alloweds:
         if not_allowed in line:
             return False
-    
+
     return True
+
 
 def process(lines):
     count = sum([1 for line in lines if is_nice(line)])
