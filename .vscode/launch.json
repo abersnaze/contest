@@ -36,7 +36,17 @@
             "args": [
                 "${fileDirname}/input.txt"
             ]
-        }
-
+        },
+        {
+            "name": "example3.txt",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "${fileDirname}/example3.txt"
+            ]
+        },
     ]
 }

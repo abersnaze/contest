@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Generator, NewType, Dict, Tuple, List
 from collections import defaultdict
-from math import inf
+from math import inf, prod
 
 from common.math import sign
 
@@ -52,14 +52,14 @@ class Dir(Enum):
         return hash((self.x, self.y))
 
 
-def adjencent4(p):
+def adjacent4(p):
     yield p + Dir.N
     yield p + Dir.E
     yield p + Dir.S
     yield p + Dir.W
 
 
-def adjencent8(p):
+def adjacent8(p):
     yield p + Dir.N
     yield p + Dir.N + Dir.E
     yield p + Dir.E
@@ -71,10 +71,10 @@ def adjencent8(p):
 
 
 class Space(Dict[Tuple[int, ...], V]):
-    def __init__(self, default, to_str=str) -> None:
+    def __init__(self, default, to_str=str, dim_range=None) -> None:
         self.default = default
         self.points = defaultdict(lambda: default)
-        self.dim_range = None
+        self.dim_range = dim_range
         self.to_str = to_str
 
     def __getitem__(self, key: Tuple[int, ...]) -> V:
@@ -109,8 +109,12 @@ class Space(Dict[Tuple[int, ...], V]):
         if self.dim_range is None:
             return "empty"
         if depth >= len(self.dim_range) - 2:
-            for y in self.range(depth):
-                for x in self.range(depth + 1):
+            if self.dim_range[depth][1] - self.dim_range[depth][0] > 200:
+                return "too big"
+            if self.dim_range[depth + 1][1] - self.dim_range[depth + 1][0] > 200:
+                return "too big"
+            for y in self.range(depth + 1):
+                for x in self.range(depth):
                     coords = tuple(path + [x, y])
                     output += self.to_str(self.points.get(coords, self.default))
                 output += "\n"
@@ -119,7 +123,18 @@ class Space(Dict[Tuple[int, ...], V]):
                 output += self.dump(1, path + [d])
         return output
 
+    def copy(self):
+        x = Space(self.default, self.to_str, self.dim_range)
+        x.points = self.points.copy()
+        return x
+    
+    def area(self):
+        return prod([max - min for min, max in self.dim_range])
+
     def __repr__(self) -> str:
+        return str(len(self.points)) + "/" + str(self.area())
+    
+    def __str__(self) -> str:
         return self.dump(0, [])
 
 
