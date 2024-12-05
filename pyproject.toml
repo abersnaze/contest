@@ -1,0 +1,7 @@
+[project]
+name = "contest"
+version = "0.1.0"
+
+# add pytest-cov dependency
+[tool.pytest.dev-dependencies]
+pytest-cov = "^2.12.1"

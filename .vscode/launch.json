@@ -6,47 +6,51 @@
     "configurations": [
         {
             "name": "example1.txt",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
-            "program": "${file}",
+            "program": "${workspaceFolder}/src/main.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
+                "${file}",
                 "${fileDirname}/example1.txt"
             ]
         },
         {
             "name": "example2.txt",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
-            "program": "${file}",
+            "program": "${workspaceFolder}/src/main.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
+                "${file}",
                 "${fileDirname}/example2.txt"
             ]
         },
         {
-            "name": "input.txt",
-            "type": "python",
+            "name": "example3.txt",
+            "type": "debugpy",
             "request": "launch",
-            "program": "${file}",
+            "program": "${workspaceFolder}/src/main.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "${fileDirname}/input.txt"
+                "${file}",
+                "${fileDirname}/example3.txt"
             ]
         },
         {
-            "name": "example3.txt",
-            "type": "python",
+            "name": "input.txt",
+            "type": "debugpy",
             "request": "launch",
-            "program": "${file}",
+            "program": "${workspaceFolder}/src/main.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "${fileDirname}/example3.txt"
-            ]
+                "${file}",
+                "${fileDirname}/input.txt"
+            ],
         },
     ]
 }
