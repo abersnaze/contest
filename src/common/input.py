@@ -205,5 +205,4 @@ def compile(pattern: str) -> Optional[Dict | Tuple]:
 
 def input():
     for line in file_input():
-        line.strip()
-        yield line
+        yield line.strip()

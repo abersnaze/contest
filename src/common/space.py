@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Generator, NewType, Dict, Tuple, List
 from collections import defaultdict
-from math import inf, prod
+from math import cos, inf, pi, prod, sin
 
 from common.math import sign
 
@@ -190,11 +190,23 @@ class Matrix3:
         self.m20, self.m21, self.m22 = values[2]
 
     @staticmethod
-    def rotateLeft():
+    def rotateLeft(x=0, y=0):
+        if x != 0 or y != 0:
+            return (
+                Matrix3.translate(x, y)
+                * Matrix3.rotateLeft()
+                * Matrix3.translate(-x, -y)
+            )
         return Matrix3(((0, -1, 0), (1, 0, 0), (0, 0, 1)))
 
     @staticmethod
-    def rotateRight():
+    def rotateRight(x=0, y=0):
+        if x != 0 or y != 0:
+            return (
+                Matrix3.translate(x, y)
+                * Matrix3.rotateLeft()
+                * Matrix3.translate(-x, -y)
+            )
         return Matrix3(((0, 1, 0), (-1, 0, 0), (0, 0, 1)))
 
     @staticmethod
@@ -281,33 +293,40 @@ class Matrix3:
 
 
 def line(
-    frm: Tuple[int, ...], to: Tuple[int, ...]
+    frms: Tuple[int, ...], tos: Tuple[int, ...]
 ) -> Generator[Tuple[int, ...], None, None]:
     """N-dimensional bresenham line drawing algorithm through a space"""
-    print("#################")
-    deltas = [t - f for t, f in zip(to, frm)]
-    steps = [sign(delta) for delta in deltas]
-    corrections = [2 * abs(delta) for delta in deltas]
-    max_delta = max(corrections) >> 1
-    error = [max_delta for correction in corrections]
-    curr = list(frm)
-    c = frm
-    print("x\td\ts\tc\te\tm")
 
-    def dump(i):
-        print(
-            f"{c[i]}\t{deltas[i]}\t{steps[i]}\t{corrections[i]}\t{error[i]}\t{max_delta}"
-        )
+    def nth(frm, to, n):
+        delta = to - frm
+        # return a tuple with the nth element set to sign and all others set to 0
+        step = tuple(sign(delta) if i == n else 0 for i in range(len(frms)))
+        return (abs(delta), step)
 
-    watch = 1
-    dump(watch)
+    def add(p1, p2):
+        for i in range(len(p1)):
+            p1[i] += p2[i]
+
+    pairs = [nth(frm, to, i) for i, (to, frm) in enumerate(zip(tos, frms))]
+    pairs.sort(reverse=True, key=lambda x: x[0])
+    steps = tuple(map(lambda x: x[1], pairs))
+    deltas = tuple(map(lambda x: x[0], pairs))
+    # the corrections start at half the max delta
+    max_delta = deltas[0]
+    errors = [abs(max_delta) / 2.0] * len(frms)
+
+    curr = list(frms)
     for i in range(max_delta):
-        yield c
-        for dim, correction in enumerate(corrections):
-            if error[dim] > 0:
-                curr[dim] += steps[dim]
-                error[dim] -= max_delta
-            error[dim] += correction
-        c = tuple(curr)
-        dump(watch)
-    yield c
+        yield tuple(curr)
+        for dim in range(len(errors)):
+            errors[dim] -= deltas[dim]
+            if errors[dim] < 0:
+                add(curr, steps[dim])
+                errors[dim] += max_delta
+    yield tuple(curr)
+
+
+def square(frms: Tuple[int, ...], tos: Tuple[int, ...], fill=False):
+    for x in range(frms[0], tos[0] + 1):
+        for y in range(frms[1], tos[1] + 1):
+            yield (x, y)
