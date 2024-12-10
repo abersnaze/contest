@@ -5,6 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "input.txt",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "${file}",
+                "${fileDirname}/input.txt"
+            ],
+        },
+        {
             "name": "example1.txt",
             "type": "debugpy",
             "request": "launch",
@@ -39,18 +51,6 @@
                 "${file}",
                 "${fileDirname}/example3.txt"
             ]
-        },
-        {
-            "name": "input.txt",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/src/main.py",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "args": [
-                "${file}",
-                "${fileDirname}/input.txt"
-            ],
         },
     ]
 }

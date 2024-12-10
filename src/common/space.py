@@ -1,18 +1,90 @@
 from enum import Enum
-from typing import Generator, NewType, Dict, Tuple, List
+from typing import Any, Generator, NewType, Dict, Optional, Tuple, List
 from collections import defaultdict
 from math import cos, inf, pi, prod, sin
 
 from common.math import sign
 
-V = NewType("UserId", int)
+
+class Point(Tuple[int, ...]):
+    def __add__(self, other):
+        return Point(ai + bi for ai, bi in zip(self, other))
+
+    def __sub__(self, other):
+        return Point(ai - bi for ai, bi in zip(self, other))
+
+    def __mul__(self, other):
+        return Point(ai * other for ai in self)
+
+    def __truediv__(self, other):
+        return Point(ai / other for ai in self)
+
+    def __floordiv__(self, other):
+        return Point(ai // other for ai in self)
+
+    def __mod__(self, other):
+        return Point(ai % other for ai in self)
+
+    def __pow__(self, other):
+        return Point(ai**other for ai in self)
+
+    def __lshift__(self, other):
+        return Point(ai << other for ai in self)
+
+    def __rshift__(self, other):
+        return Point(ai >> other for ai in self)
+
+    def __and__(self, other):
+        return Point(ai & other for ai in self)
+
+    def __xor__(self, other):
+        return Point(ai ^ other for ai in self)
+
+    def __or__(self, other):
+        return Point(ai | other for ai in self)
+
+    def __radd__(self, other):
+        return Point(ai + bi for ai, bi in zip(other, self))
+
+    def __rsub__(self, other):
+        return Point(ai - bi for ai, bi in zip(other, self))
+
+    def __rmul__(self, other):
+        return Point(ai * other for ai in self)
+
+    def __rtruediv__(self, other):
+        return Point(ai / other for ai in self)
+
+    def __rfloordiv__(self, other):
+        return Point(ai // other for ai in self)
+
+    def __rmod__(self, other):
+        return Point(ai % other for ai in self)
+
+    def __rpow__(self, other):
+        return Point(ai**other for ai in self)
+
+    def __rlshift__(self, other):
+        return Point(ai << other for ai in self)
+
+    def __rrshift__(self, other):
+        return Point(ai >> other for ai in self)
+
+    def __rand__(self, other):
+        return Point(ai & other for ai in self)
+
+    def __rxor__(self, other):
+        return Point(ai ^ other for ai in self)
+
+    def manhattan(self):
+        return sum(map(abs, self))
 
 
 class Dir4(Enum):
-    N = (0, -1)
-    E = (1, 0)
-    S = (0, 1)
-    W = (-1, 0)
+    N = Point((0, -1))
+    E = Point((1, 0))
+    S = Point((0, 1))
+    W = Point((-1, 0))
 
     def __init__(self, x, y):
         self.x = x
@@ -20,9 +92,9 @@ class Dir4(Enum):
 
     def turn(self, turn):
         if turn == "L":
-            return Dir4((-self.y, self.x))
-        elif turn == "R":
             return Dir4((self.y, -self.x))
+        elif turn == "R":
+            return Dir4((-self.y, self.x))
         elif turn == "U":
             return Dir4((-self.x, -self.y))
         elif turn == "F":
@@ -47,14 +119,14 @@ class Dir4(Enum):
 
 
 class Dir8(Enum):
-    N = (0, -1)
-    NE = (1, -1)
-    E = (1, 0)
-    SE = (1, 1)
-    S = (0, 1)
-    SW = (-1, 1)
-    W = (-1, 0)
-    NW = (-1, -1)
+    N = Point((0, -1))
+    NE = Point((1, -1))
+    E = Point((1, 0))
+    SE = Point((1, 1))
+    S = Point((0, 1))
+    SW = Point((-1, 1))
+    W = Point((-1, 0))
+    NW = Point((-1, -1))
 
     def __init__(self, x, y):
         self.x = x
@@ -62,18 +134,6 @@ class Dir8(Enum):
 
     def __str__(self):
         return self.name
-
-    def __repr__(self):
-        return self.name
-
-    def __add__(self, other):
-        return (self.x + other[0], self.y + other[1])
-
-    def __radd__(self, other):
-        return self.__add__(other)
-
-    def __hash__(self):
-        return hash((self.x, self.y))
 
 
 def adjacent4(p):
@@ -86,15 +146,16 @@ def adjacent8(p):
         yield p + d
 
 
-class Space(Dict[Tuple[int, ...], V]):
+class Space(Dict[Tuple[int, ...], Any]):
     def __init__(
         self,
         default=".",
         to_str=str,
         dim_range=None,
         points=None,
-        func=lambda p: (p[0], p[1]),
-        unfunc=lambda p: (p[0], p[1]),
+        func=lambda p: Point(p),
+        unfunc=lambda p: Point(p),
+        under_layer: Optional["Space"] = None,
     ) -> None:
         self._default = default
         self._points = defaultdict(lambda: default) if points is None else points
@@ -102,18 +163,51 @@ class Space(Dict[Tuple[int, ...], V]):
         self._to_str = to_str
         self._func = func
         self._unfunc = unfunc
+        self._under_layer = under_layer
 
-    def __getitem__(self, key: Tuple[int, ...]) -> V:
+    @staticmethod
+    def read(input, **kwargs):
+        space = Space(**kwargs)
+        for y, line in enumerate(input()):
+            if line == "":
+                break
+            for x, char in enumerate(line):
+                if char == space._default:
+                    space.cover((x, y))
+                else:
+                    space[(x, y)] = char
+        return space
+
+    def __getitem__(self, key: Tuple[int, ...]) -> Any:
         return self._points[self._func(key)]
 
-    def __setitem__(self, key: Tuple[int, ...], value: V) -> None:
+    def __setitem__(self, key: Tuple[int, ...], value: Any) -> None:
+        self.cover(key)
+        self._points[self._func(key)] = value
+
+    def cover(self, key):
         if self._dim_range is None:
             self._dim_range = [(inf, -inf) for i in range(len(key))]
         # keep track the range for each dimension
         for i, k in enumerate(key):
             min_k, max_k = self._dim_range[i]
             self._dim_range[i] = (min(min_k, k), max(max_k, k))
-        self._points[self._func(key)] = value
+
+    def __delitem__(self, key: Tuple[int, ...]) -> None:
+        if key in self._points:
+            del self._points[self._func(key)]
+
+    def inside(self, key: Tuple[int, ...]) -> bool:
+        if self._dim_range is None:
+            return True
+        for i, k in enumerate(key):
+            min_k, max_k = self._dim_range[i]
+            if k < min_k or k > max_k:
+                return False
+        return True
+
+    def items(self):
+        return map(lambda i: (self._unfunc(i[0]), i[1]), self._points.items())
 
     def keys(self):
         return map(self._unfunc, self._points.keys())
@@ -328,5 +422,9 @@ def line(
 
 def square(frms: Tuple[int, ...], tos: Tuple[int, ...], fill=False):
     for x in range(frms[0], tos[0] + 1):
-        for y in range(frms[1], tos[1] + 1):
-            yield (x, y)
+        if fill or x in (frms[0], tos[0]):
+            for y in range(frms[1], tos[1] + 1):
+                yield (x, y)
+        else:
+            yield (x, frms[1])
+            yield (x, tos[1])

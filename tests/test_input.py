@@ -68,17 +68,17 @@ def test_compile_match_combined(pattern, input, expected):
 
 
 def test_compile_list_unnamed():
-    pattern = compile("[<int>: ]")
-    assert pattern("") == ([])
-    assert pattern("1 2 3") == ([1, 2, 3])
+    pattern = compile("[<int> ]")
+    assert pattern("") == ([],)
+    assert pattern("1 2 3") == ([1, 2, 3],)
 
 
 def test_compile_list_named():
-    pattern = compile("[<int>:, :numbers]")
+    pattern = compile("[<int>, :numbers]")
     assert pattern("") == ({"numbers": []})
     assert pattern("1 2 3") == ({"numbers": [1, 2, 3]})
 
 
-def test_lookbehind():
+def test_backtrack():
     pattern = compile("<str|turn off|turn on|toggle> <int>,<int> through <int>,<int>")
-    assert pattern("turn off 1,2 through 3,4") == ('turn off', 1, 2, 3, 4)
+    assert pattern("turn off 1,2 through 3,4") == ("turn off", 1, 2, 3, 4)

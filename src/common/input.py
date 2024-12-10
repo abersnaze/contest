@@ -87,7 +87,7 @@ def extract_type(pattern: str, i: int):
 def extract_name(pattern: str, i: int):
     name = ""
     i += 1
-    while pattern[i] != ">":
+    while i < len(pattern) and pattern[i] != ">":
         name += pattern[i]
         i += 1
     return name, i + 1
@@ -119,10 +119,16 @@ def compile_list(pattern: str, i: int) -> Tuple[
     Callable[[str, int, Optional[Dict | Tuple]], Tuple[Optional[Dict | Tuple], int]],
     int,
 ]:
-    func, i = extract_type(pattern, i)
-    end = pattern.index(":", i)
-    joiner, _ = compile_pattern(pattern[i:end], 0)
-    i = end + 1
+    end = pattern.index("]", i)
+    try:
+        name_start = pattern.index(":", i, end)
+        name = pattern[name_start + 1 : end]
+        end = name_start
+    except ValueError:
+        name = None
+    func, i = extract_type(pattern[:end], i)
+    sep, _ = compile_pattern(pattern[i + 1 : end], 0)
+    i = end
     if pattern[i] == ":":
         name, i = extract_name(pattern, i)
 
@@ -138,9 +144,12 @@ def compile_list(pattern: str, i: int) -> Tuple[
 
         def match(input, j, context):
             values = []
-            while j < len(input) and input[j] != "]":
+            while j < len(input):
                 value, j = func(input, j)
                 values.append(value)
+                success = sep(input, j, None)
+                if success is None:
+                    break
             return add_to(context, (values,)), j + 1
 
         return match, i
@@ -181,10 +190,10 @@ def compile_pattern(
         if pattern[i] == "<":
             var_func, i = compile_match(pattern, i)
             func = chain(func, var_func)
-        # elif pattern[i] == "[":
-        #     list_func, i = compile_list(pattern, i + 1)
-        #     func = chain(func, list_func)
-        #     i += 1
+        elif pattern[i] == "[":
+            list_func, i = compile_list(pattern, i + 1)
+            func = chain(func, list_func)
+            i += 1
         else:
             lit_func, i = compile_literal(pattern, i)
             func = chain(func, lit_func)
