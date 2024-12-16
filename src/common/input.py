@@ -25,7 +25,7 @@ def extract_type(pattern: str, i: int):
         # find the digits in the input starting at j
         def parse_int(input, j):
             digits = ""
-            while j < len(input) and input[j].isdigit():
+            while j < len(input) and (input[j].isdigit() or input[j] in "+-"):
                 digits += input[j]
                 j += 1
             return int(digits), j

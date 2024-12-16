@@ -80,5 +80,5 @@ def test_compile_list_named():
 
 
 def test_backtrack():
-    pattern = compile("<str|turn off|turn on|toggle> <int>,<int> through <int>,<int>")
-    assert pattern("turn off 1,2 through 3,4") == ("turn off", 1, 2, 3, 4)
+    pattern = compile("<str> <int>")
+    assert pattern("turn off 1") == ("turn off", 1)

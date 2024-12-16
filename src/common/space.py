@@ -80,6 +80,14 @@ class Point(Tuple[int, ...]):
         return sum(map(abs, self))
 
 
+class Dir2(Enum):
+    NS = Point((1, 0))
+    EW = Point((0, 1))
+
+    def __repr__(self):
+        return self.name
+
+
 class Dir4(Enum):
     N = Point((0, -1))
     E = Point((1, 0))
@@ -164,19 +172,23 @@ class Space(Dict[Tuple[int, ...], Any]):
         self._func = func
         self._unfunc = unfunc
         self._under_layer = under_layer
+        self._values = defaultdict(set)
 
     @staticmethod
-    def read(input, **kwargs):
+    def read(input, vfunc=lambda p: p, **kwargs):
         space = Space(**kwargs)
-        for y, line in enumerate(input()):
+        for y, line in enumerate(input):
             if line == "":
                 break
             for x, char in enumerate(line):
                 if char == space._default:
                     space.cover((x, y))
                 else:
-                    space[(x, y)] = char
+                    space[(x, y)] = vfunc(char)
         return space
+
+    def index(self, value) -> Generator[Tuple[int, ...], None, None]:
+        return self._values[value]
 
     def __getitem__(self, key: Tuple[int, ...]) -> Any:
         return self._points[self._func(key)]
@@ -184,6 +196,7 @@ class Space(Dict[Tuple[int, ...], Any]):
     def __setitem__(self, key: Tuple[int, ...], value: Any) -> None:
         self.cover(key)
         self._points[self._func(key)] = value
+        self._values[value].add(key)
 
     def cover(self, key):
         if self._dim_range is None:
@@ -194,6 +207,7 @@ class Space(Dict[Tuple[int, ...], Any]):
             self._dim_range[i] = (min(min_k, k), max(max_k, k))
 
     def __delitem__(self, key: Tuple[int, ...]) -> None:
+        self._values[self._points[self._func(key)]].remove(key)
         if key in self._points:
             del self._points[self._func(key)]
 
@@ -212,6 +226,9 @@ class Space(Dict[Tuple[int, ...], Any]):
     def keys(self):
         return map(self._unfunc, self._points.keys())
 
+    def values(self):
+        return self._values.keys()
+
     def __iadd__(self, other: Tuple[int, ...]) -> None:
         self[self._func(other)] += 1
 
@@ -221,14 +238,23 @@ class Space(Dict[Tuple[int, ...], Any]):
     def __contains__(self, key) -> bool:
         return self._func(key) in self._points
 
+    def minmax(self, depth: int) -> Tuple[int, int]:
+        return self._dim_range[depth]
+
     def range(self, depth: int) -> range:
         min_d, max_d = self._func(self._dim_range)[depth]
         return range(min_d, max_d + 1)
 
+    def project(self, rm_depth: int) -> "Space":
+        output = Space(to_str=self._to_str)
+        for key, value in self.items():
+            output[key[:rm_depth] + key[rm_depth + 1 :]] = value
+        return output
+
     def dump(self, depth: int, path: List[int]) -> str:
         output = ""
         if path:
-            output += "".join(map(self._to_str, path)) + "\n"
+            output += "".join(map(str, path)) + "\n"
         if self._dim_range is None:
             return "empty"
         if depth >= len(self._dim_range) - 2:
