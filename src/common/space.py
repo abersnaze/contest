@@ -104,14 +104,21 @@ class Dir4(Enum):
         elif turn == "R":
             return Dir4((-self.y, self.x))
         elif turn == "U":
-            return Dir4((-self.x, -self.y))
+            return -self
         elif turn == "F":
             return self
         else:
             raise ValueError(f"Unknown turn {turn}")
 
     def __str__(self):
-        return self.name
+        if self == Dir4.N:
+            return "^"
+        if self == Dir4.E:
+            return ">"
+        if self == Dir4.S:
+            return "v"
+        if self == Dir4.W:
+            return "<"
 
     def __repr__(self):
         return self.name
@@ -122,8 +129,17 @@ class Dir4(Enum):
     def __radd__(self, other):
         return self.__add__(other)
 
+    def __sub__(self, other):
+        return (self.x - other[0], self.y - other[1])
+
+    def __rsub__(self, other):
+        return (other[0] - self.x, other[1] - self.y)
+
     def __hash__(self):
         return hash((self.x, self.y))
+
+    def __neg__(self):
+        return Dir4((-self.x, -self.y))
 
 
 class Dir8(Enum):
@@ -191,7 +207,11 @@ class Space(Dict[Tuple[int, ...], Any]):
         return self._values[value]
 
     def __getitem__(self, key: Tuple[int, ...]) -> Any:
-        return self._points[self._func(key)]
+        value = self._points[self._func(key)]
+        if callable(value):
+            value = value()
+            self._points[self._func(key)] = value
+        return value
 
     def __setitem__(self, key: Tuple[int, ...], value: Any) -> None:
         self.cover(key)
@@ -203,8 +223,13 @@ class Space(Dict[Tuple[int, ...], Any]):
             self._dim_range = [(inf, -inf) for i in range(len(key))]
         # keep track the range for each dimension
         for i, k in enumerate(key):
-            min_k, max_k = self._dim_range[i]
-            self._dim_range[i] = (min(min_k, k), max(max_k, k))
+            if type(k) == int:
+                min_k, max_k = self._dim_range[i]
+                self._dim_range[i] = (min(min_k, k), max(max_k, k))
+            else:
+                if type(self._dim_range[i]) != set:
+                    self._dim_range[i] = set()
+                self._dim_range[i].add(k)
 
     def __delitem__(self, key: Tuple[int, ...]) -> None:
         self._values[self._points[self._func(key)]].remove(key)
@@ -215,9 +240,13 @@ class Space(Dict[Tuple[int, ...], Any]):
         if self._dim_range is None:
             return True
         for i, k in enumerate(key):
-            min_k, max_k = self._dim_range[i]
-            if k < min_k or k > max_k:
-                return False
+            if type(k) == int:
+                min_k, max_k = self._dim_range[i]
+                if k < min_k or k > max_k:
+                    return False
+            else:
+                if k not in self._dim_range[i]:
+                    return False
         return True
 
     def items(self):
@@ -242,13 +271,23 @@ class Space(Dict[Tuple[int, ...], Any]):
         return self._dim_range[depth]
 
     def range(self, depth: int) -> range:
-        min_d, max_d = self._func(self._dim_range)[depth]
-        return range(min_d, max_d + 1)
+        if type(self._dim_range[depth]) == tuple:
+            min_d, max_d = self._func(self._dim_range)[depth]
+            return range(min_d, max_d + 1)
+        return iter(self._dim_range[depth])
 
-    def project(self, rm_depth: int) -> "Space":
-        output = Space(to_str=self._to_str)
+    def len(self, depth: int) -> int:
+        if type(self._dim_range[depth]) == tuple:
+            min_d, max_d = self._func(self._dim_range)[depth]
+            return max_d - min_d
+        return len(self._dim_range[depth])
+
+    def project(self, rm_depth: int, **kwargs) -> "Space":
+        output = Space(**kwargs, default=lambda: defaultdict(lambda: self._default))
         for key, value in self.items():
-            output[key[:rm_depth] + key[rm_depth + 1 :]] = value
+            shadow_key = key[:rm_depth] + key[rm_depth + 1 :]
+            output.cover(shadow_key)
+            output[shadow_key][key[rm_depth]] = value
         return output
 
     def dump(self, depth: int, path: List[int]) -> str:
@@ -258,15 +297,13 @@ class Space(Dict[Tuple[int, ...], Any]):
         if self._dim_range is None:
             return "empty"
         if depth >= len(self._dim_range) - 2:
-            if self._dim_range[depth][1] - self._dim_range[depth][0] > 200:
-                return "too big"
-            if self._dim_range[depth + 1][1] - self._dim_range[depth + 1][0] > 200:
+            if self.len(depth) > 200:
                 return "too big"
             for y in self.range(depth + 1):
                 for x in self.range(depth):
                     coords = tuple(path + [x, y])
                     coords = self._func(coords)
-                    output += self._to_str(self._points.get(coords, self._default))
+                    output += self._to_str(self[coords])
                 output += "\n"
         else:
             for d in self.range(depth):
