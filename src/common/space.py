@@ -162,12 +162,12 @@ class Dir8(Enum):
 
 def adjacent4(p):
     for d in Dir4:
-        yield p + d
+        yield p + d.value
 
 
 def adjacent8(p):
     for d in Dir8:
-        yield p + d
+        yield p + d.value
 
 
 class Space(Dict[Tuple[int, ...], Any]):
@@ -207,7 +207,7 @@ class Space(Dict[Tuple[int, ...], Any]):
         return self._values[value]
 
     def __getitem__(self, key: Tuple[int, ...]) -> Any:
-        value = self._points[self._func(key)]
+        value = self._points.get(self._func(key), self._default)
         if callable(value):
             value = value()
             self._points[self._func(key)] = value
@@ -215,7 +215,12 @@ class Space(Dict[Tuple[int, ...], Any]):
 
     def __setitem__(self, key: Tuple[int, ...], value: Any) -> None:
         self.cover(key)
-        self._points[self._func(key)] = value
+        func_key = self._func(key)
+        # Clean up old reverse index entry if key already exists
+        if func_key in self._points:
+            old_value = self._points[func_key]
+            self._values[old_value].discard(key)
+        self._points[func_key] = value
         self._values[value].add(key)
 
     def cover(self, key):
@@ -232,9 +237,11 @@ class Space(Dict[Tuple[int, ...], Any]):
                 self._dim_range[i].add(k)
 
     def __delitem__(self, key: Tuple[int, ...]) -> None:
-        self._values[self._points[self._func(key)]].remove(key)
-        if key in self._points:
-            del self._points[self._func(key)]
+        func_key = self._func(key)
+        if func_key in self._points:
+            old_value = self._points[func_key]
+            self._values[old_value].discard(key)
+            del self._points[func_key]
 
     def inside(self, key: Tuple[int, ...]) -> bool:
         if self._dim_range is None:

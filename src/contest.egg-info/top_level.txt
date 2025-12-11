@@ -1,3 +1,0 @@
-advent_of_code
-common
-main
